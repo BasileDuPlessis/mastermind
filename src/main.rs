@@ -1,5 +1,6 @@
-use std::io;
+use std::{str::FromStr, io};
 use std::fmt;
+use fmt::Debug;
 use rand::prelude::*;
 
 
@@ -48,18 +49,19 @@ impl std::str::FromStr for Pawn {
 
 impl fmt::Display for Pawn {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Pawn::Blue => write!(f, "blue"),
-            Pawn::Red => write!(f, "red"),
-            Pawn::Green => write!(f, "green"),
-            Pawn::Yellow => write!(f, "yellow"),
-            Pawn::Pink => write!(f, "pink"),
-            Pawn::Empty => write!(f, "_")
+        match self {
+            &Pawn::Blue => write!(f, "blue"),
+            &Pawn::Red => write!(f, "red"),
+            &Pawn::Green => write!(f, "green"),
+            &Pawn::Yellow => write!(f, "yellow"),
+            &Pawn::Pink => write!(f, "pink"),
+            &Pawn::Empty => write!(f, "_")
         }
     }
 }
 
 type Pattern=[Pawn; SIZE];
+
 
 // Create a new game
 // Wait for proposition like color-color-... (5 times)
@@ -76,17 +78,12 @@ fn main() {
             Ok(_n) => {
                 
                 let mut proposition:Pattern = [Pawn::Empty; SIZE];
-                let iter = input
-                    .trim()
-                    .split('-')
-                    .map(
-                        |s| s.parse::<Pawn>().unwrap_or(Pawn::Empty)
-                    );
                 
-
-                for (i, c)in iter.enumerate() {
+                let v = split_into_type::<Pawn>(input, '-', Pawn::Empty);
+            
+                for (i, c)in v.iter().enumerate() {
                     if i==SIZE {break;}
-                    proposition[i] = c;
+                    proposition[i] = *c;
                 }
                 
                 match check_matches(&game_solution, &proposition) {
@@ -104,6 +101,16 @@ fn main() {
     }
 }
 
+// Transform a String (T sep T sep ...) into an iterable of type T
+fn split_into_type<T>(source: &str, pattern: char, default: T) -> Vec<T> where T:FromStr+Copy {
+    source
+        .trim()
+        .split(pattern)
+        .map(
+            |s| s.parse().unwrap_or(default)
+        )
+        .collect()
+}
 
 // Search &T in a mutable reference of Vec<&T>
 // Remove it from Vector if exists and return TRUE
@@ -152,6 +159,14 @@ fn check_matches(solution:&Pattern, proposition:&Pattern)->(u8, u8) {
 mod tests {
 
     use super::*;
+
+    #[test]
+    fn test_split_into_type() {
+        assert_eq!(split_into_type::<Pawn>("blue-red", '-', Pawn::Empty), vec![Pawn::Blue, Pawn::Red]);
+        assert_eq!(split_into_type::<Pawn>("blue-road", '-', Pawn::Empty), vec![Pawn::Blue, Pawn::Empty]);
+        assert_eq!(split_into_type::<Pawn>("blueroad", '-', Pawn::Empty), vec![Pawn::Empty]);
+        assert_eq!(split_into_type::<Pawn>("", '-', Pawn::Empty), vec![Pawn::Empty]);
+    }
 
     #[test]
     fn test_new_random_game() {
