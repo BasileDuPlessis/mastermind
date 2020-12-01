@@ -101,7 +101,8 @@ fn main() {
     }
 }
 
-// Transform a String (T sep T sep ...) into an iterable of type T
+// Split a String and try to match each item with type T
+// Return a Vector of T
 fn split_into_type<T>(source: &str, pattern: char, default: T) -> Vec<T> where T:FromStr+Copy {
     source
         .trim()
